@@ -1,7 +1,7 @@
 import os, json
 from tqdm import tqdm
 from typing import List
-from prompts import CAPTION_PROMPT
+from .prompts import CAPTION_PROMPT
 from dashscope import MultiModalConversation
 from langchain.docstore.document import Document
 from concurrent.futures import ThreadPoolExecutor, as_completed

@@ -56,7 +56,7 @@ def qwen_score_block(query: str, block: Document) -> float:
 
 
 # ---------- 主 rerank ----------
-def rerank_parents_with_qwen(
+def rerank_parents_with_llm(
     query: str,
     parents: List[Document],
     n_text: int,  # TOP_TEXT
