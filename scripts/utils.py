@@ -8,6 +8,8 @@ from pathlib import Path
 from itertools import islice
 from collections import Counter, defaultdict
 from langchain.docstore.document import Document
+from IPython.display import display, Markdown, Image
+
 
 # CORPUS_PATH = Path("/data/huali_data")
 # OUTPUT_DIR  = Path("/data/huali_mm")
@@ -124,3 +126,46 @@ def preview_docs_by_type(docs, n_preview=5):
         print(f"\n=== {t.upper()}  (共 {len(lst)} 条) ===")
         for i, d in enumerate(islice(lst, n_preview), 1):
             print(f"{i}.", d)
+
+
+def block_fmt(doc: Document, idx: int) -> str:
+    tp  = doc.metadata["type"]
+    pg  = doc.metadata["page_idx"]
+    b   = doc.metadata["book_idx"]
+    head = f"[{idx:02d}] ({tp.upper()} | book={b}, page={pg})"
+    body = doc.page_content.strip()
+    return f"{head}\n{body}"
+
+
+
+def render_mm_results(result, top_media_parents, response):
+    # 把 media tag 映射到路径 & caption
+    tag2info = {}
+    for idx, doc in enumerate(top_media_parents, 1):
+        tag = f"<MEDIA_{idx}>"
+        path = doc.metadata["img_path"]
+        caption = (doc.metadata.get("img_caption") or
+                   doc.metadata.get("table_caption") or "")
+        caption = " ".join(caption) if isinstance(caption, list) else caption
+        tag2info[tag] = (path, caption)
+
+    # 显示思考过程
+    display(Markdown("## 🤔 思考过程\n\n" +
+                     response.choices[0].message.reasoning_content))
+
+    # 显示润色后回答并插入图表
+    display(Markdown("## 💡 回答\n"))
+    for para in result["enhanced_paragraphs"]:
+        # 逐段输出，替换占位符
+        for tag, (img_path, cap) in tag2info.items():
+            if tag in para:
+                # 段落文本去掉 tag 占位
+                para_text = para.replace(tag, "").strip()
+                if para_text:
+                    display(Markdown(para_text))
+                display(Image(img_path))
+                display(Markdown(f"*{cap}*"))
+                break
+        else:
+            # 普通段落
+            display(Markdown(para))
